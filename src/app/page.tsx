@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { apiClient } from "@/lib/api-client";
@@ -132,6 +133,15 @@ export default function HomePage() {
           </button>
         </form>
       )}
+
+      <div className="mt-8 flex gap-6 text-sm text-foreground/60">
+        <Link href="/stats" className="underline underline-offset-4 hover:text-foreground transition-colors">
+          Stats
+        </Link>
+        <Link href="/monitoring" className="underline underline-offset-4 hover:text-foreground transition-colors">
+          Monitoring
+        </Link>
+      </div>
     </div>
   );
 }

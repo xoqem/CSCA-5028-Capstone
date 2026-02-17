@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recordApiError } from "@/lib/metrics";
 import * as gameService from "@/services/game-service";
 
 export async function GET(
@@ -20,6 +21,7 @@ export async function GET(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     const status = message.includes("not found") ? 404 : 500;
+    recordApiError();
     console.error("[GET /api/games/.../report]", err);
     return NextResponse.json({ error: message }, { status });
   }

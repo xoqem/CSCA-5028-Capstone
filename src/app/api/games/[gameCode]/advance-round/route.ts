@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recordApiError } from "@/lib/metrics";
 import * as gameService from "@/services/game-service";
 
 export async function POST(
@@ -11,6 +12,7 @@ export async function POST(
     return NextResponse.json({ advanced: true });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    recordApiError();
     console.error("[POST /api/games/.../advance-round]", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }

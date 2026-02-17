@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recordApiError } from "@/lib/metrics";
 import * as gameService from "@/services/game-service";
 
 export async function POST(
@@ -33,6 +34,7 @@ export async function POST(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     const status = message.includes("not found") ? 404 : 500;
+    recordApiError();
     console.error("[POST /api/games/.../submit]", err);
     return NextResponse.json({ error: message }, { status });
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { recordApiError } from "@/lib/metrics";
 import * as gameService from "@/services/game-service";
 
 export async function POST(
@@ -16,6 +17,7 @@ export async function POST(
       : message.includes("already started")
         ? 409
         : 500;
+    recordApiError();
     console.error("[POST /api/games/.../start]", err);
     return NextResponse.json({ error: message }, { status });
   }

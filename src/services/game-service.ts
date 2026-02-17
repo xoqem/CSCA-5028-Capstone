@@ -1,5 +1,11 @@
 import { randomBytes } from "crypto";
 import { generateEquation, getDifficulty } from "@/lib/equation-generator";
+import {
+	recordGameCreated,
+	recordGameFinished,
+	recordRoundCompleted,
+	recordSubmission,
+} from "@/lib/metrics";
 import * as gameRepo from "@/repositories/game-repository";
 import { calculateScore } from "@/services/scoring-service";
 import type {
@@ -52,6 +58,7 @@ export async function createGame(
 		displayName,
 	});
 
+	recordGameCreated();
 	return { gameCode, playerId: player.id, sessionToken, isHost: true };
 }
 
@@ -179,12 +186,18 @@ async function endRound(
 	const round = await gameRepo.findRound(gameId, roundNumber);
 	if (!round || round.status === "ENDED") return;
 
-	await gameRepo.updateRoundStatus(round.id, "ENDED", { endedAt: new Date() });
+	const endedAt = new Date();
+	await gameRepo.updateRoundStatus(round.id, "ENDED", { endedAt });
 	await emitEvent(gameId, "ROUND_ENDED", { roundNumber });
+
+	if (round.startedAt) {
+		recordRoundCompleted(endedAt.getTime() - round.startedAt.getTime());
+	}
 
 	if (roundNumber >= ROUNDS_PER_GAME) {
 		await gameRepo.updateGameStatus(gameCode, "FINISHED");
 		await emitEvent(gameId, "GAME_ENDED", {});
+		recordGameFinished();
 	} else {
 		await startRound(gameCode, gameId, roundNumber + 1);
 	}
@@ -328,6 +341,8 @@ export async function submitAnswer(input: {
 		score,
 		timeTakenMs: input.timeTakenMs,
 	});
+
+	recordSubmission(isCorrect);
 
 	await emitEvent(game.id, "ANSWER_SUBMITTED", {
 		roundNumber: input.roundNumber,
