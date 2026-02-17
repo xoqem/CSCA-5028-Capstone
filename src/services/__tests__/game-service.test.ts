@@ -7,7 +7,6 @@ import {
 	type Mock,
 } from "vitest";
 
-// ── Mock the repository layer ──────────────────────────────────────
 vi.mock("@/repositories/game-repository");
 vi.mock("@/lib/equation-generator", () => ({
 	getDifficulty: vi.fn(() => "easy"),
@@ -25,12 +24,10 @@ import {
 	getGameReport,
 } from "@/services/game-service";
 
-// Type helper — all repo exports are auto-mocked as vi.fn()
 const repo = gameRepo as unknown as {
 	[K in keyof typeof gameRepo]: Mock;
 };
 
-// ── Helpers to build mock objects ──────────────────────────────────
 function makeGame(overrides: Partial<Record<string, unknown>> = {}) {
 	return {
 		id: "game-1",
@@ -70,10 +67,8 @@ function makeRound(overrides: Partial<Record<string, unknown>> = {}) {
 	};
 }
 
-// ── Tests ──────────────────────────────────────────────────────────
 beforeEach(() => {
 	vi.clearAllMocks();
-	// default stubs that many tests need
 	repo.createGameEvent.mockResolvedValue(undefined);
 });
 
@@ -143,7 +138,6 @@ describe("startGame", () => {
 		repo.findGameByCode.mockResolvedValue(makeGame());
 		repo.createRounds.mockResolvedValue(undefined);
 		repo.updateGameStatus.mockResolvedValue(undefined);
-		// startRound internals
 		repo.findRound.mockResolvedValue(makeRound());
 		repo.updateRoundStatus.mockResolvedValue(undefined);
 		repo.updateGameCurrentRound.mockResolvedValue(undefined);
@@ -254,7 +248,6 @@ describe("submitAnswer", () => {
 			expect.any(Date),
 			expect.any(Date),
 		);
-		// should emit FIRST_CORRECT and COUNTDOWN_STARTED
 		const eventCalls = repo.createGameEvent.mock.calls.map(
 			(c: unknown[]) => c[1],
 		);
@@ -285,7 +278,6 @@ describe("submitAnswer", () => {
 			answer: 4,
 		});
 
-		// setRoundFirstCorrect should NOT have been called since firstCorrectAt is already set
 		expect(repo.setRoundFirstCorrect).not.toHaveBeenCalled();
 	});
 
@@ -325,7 +317,7 @@ describe("submitAnswer", () => {
 	it("rejects submission after countdown expired", async () => {
 		const expired = makeRound({
 			status: "COUNTDOWN",
-			countdownEndsAt: new Date(Date.now() - 1000), // already expired
+			countdownEndsAt: new Date(Date.now() - 1000),
 		});
 		repo.findGameByCode.mockResolvedValue(
 			makeGame({ status: "IN_PROGRESS", currentRoundNumber: 1 }),
@@ -347,14 +339,13 @@ describe("submitAnswer", () => {
 			makeGame({ status: "IN_PROGRESS", currentRoundNumber: 1 }),
 		);
 		repo.findRound
-			.mockResolvedValueOnce(makeRound()) // initial lookup
-			.mockResolvedValueOnce(makeRound()); // endRound lookup
+			.mockResolvedValueOnce(makeRound())
+			.mockResolvedValueOnce(makeRound());
 		repo.findSubmissionForPlayerRound.mockResolvedValue(null);
 		repo.createSubmission.mockResolvedValue(undefined);
-		repo.countPlayersInGame.mockResolvedValue(1); // solo game
-		repo.countSubmissionsForRound.mockResolvedValue(1); // this was the last submission
+		repo.countPlayersInGame.mockResolvedValue(1);
+		repo.countSubmissionsForRound.mockResolvedValue(1);
 		repo.countSubmissionsForPlayer.mockResolvedValue(1);
-		// endRound internals
 		repo.updateRoundStatus.mockResolvedValue(undefined);
 		repo.updateGameCurrentRound.mockResolvedValue(undefined);
 
@@ -362,10 +353,9 @@ describe("submitAnswer", () => {
 			gameCode: "ABC123",
 			roundNumber: 1,
 			playerId: "player-1",
-			answer: 999, // incorrect, doesn't matter
+			answer: 999,
 		});
 
-		// Should have called updateRoundStatus to ENDED
 		expect(repo.updateRoundStatus).toHaveBeenCalledWith(
 			"round-1",
 			"ENDED",
@@ -382,14 +372,14 @@ describe("advanceRoundIfNeeded", () => {
 
 		const expiredRound = makeRound({
 			status: "COUNTDOWN",
-			countdownEndsAt: new Date("2025-01-01T00:00:05.000Z"), // expired
+			countdownEndsAt: new Date("2025-01-01T00:00:05.000Z"),
 		});
 		repo.findGameByCode.mockResolvedValue(
 			makeGame({ status: "IN_PROGRESS", currentRoundNumber: 1 }),
 		);
 		repo.findRound
-			.mockResolvedValueOnce(expiredRound) // advanceRoundIfNeeded lookup
-			.mockResolvedValueOnce(expiredRound); // endRound lookup
+			.mockResolvedValueOnce(expiredRound)
+			.mockResolvedValueOnce(expiredRound);
 		repo.updateRoundStatus.mockResolvedValue(undefined);
 		repo.updateGameCurrentRound.mockResolvedValue(undefined);
 
@@ -410,7 +400,7 @@ describe("advanceRoundIfNeeded", () => {
 		);
 		repo.findRound.mockResolvedValue(makeRound({ status: "ACTIVE" }));
 		repo.countPlayersInGame.mockResolvedValue(2);
-		repo.countSubmissionsForRound.mockResolvedValue(1); // only 1 of 2
+		repo.countSubmissionsForRound.mockResolvedValue(1);
 
 		await advanceRoundIfNeeded("ABC123");
 
@@ -424,7 +414,7 @@ describe("advanceRoundIfNeeded", () => {
 		const activeRound = makeRound({ status: "ACTIVE" });
 		repo.findRound
 			.mockResolvedValueOnce(activeRound)
-			.mockResolvedValueOnce(activeRound); // endRound lookup
+			.mockResolvedValueOnce(activeRound);
 		repo.countPlayersInGame.mockResolvedValue(2);
 		repo.countSubmissionsForRound.mockResolvedValue(2);
 		repo.countCorrectSubmissionsForRound.mockResolvedValue(0);
@@ -459,7 +449,6 @@ describe("getGameState", () => {
 			players: [makePlayer()],
 		};
 		repo.findGameByCodeWithPlayers.mockResolvedValue(game);
-		// advanceRoundIfNeeded call chain
 		repo.findGameByCode.mockResolvedValue(
 			makeGame({ status: "IN_PROGRESS", currentRoundNumber: 1 }),
 		);

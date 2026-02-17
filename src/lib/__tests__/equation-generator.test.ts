@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("@/lib/mathjs-client", () => ({
 	evaluateExpression: vi.fn(async (expr: string) => {
-		// use Function-based eval the same way evaluateLocally does
 		return new Function(`return (${expr})`)() as number;
 	}),
 }));
@@ -41,11 +40,10 @@ describe("generateEquation", () => {
 	});
 
 	it("generates a valid easy equation (addition)", async () => {
-		// randomInt(1,20) → 5, randomInt(1,20) → 10, randomInt(0,1) → 0 ("+")
 		randomSpy
-			.mockReturnValueOnce(4 / 20)  // → floor(4/20 * 20) + 1 = 5
-			.mockReturnValueOnce(9 / 20)  // → floor(9/20 * 20) + 1 = 10
-			.mockReturnValueOnce(0);       // → 0 → "+"
+			.mockReturnValueOnce(4 / 20)
+			.mockReturnValueOnce(9 / 20)
+			.mockReturnValueOnce(0);
 
 		const result = await generateEquation("easy");
 		expect(result.text).toBe("5 + 10");
@@ -53,11 +51,10 @@ describe("generateEquation", () => {
 	});
 
 	it("generates a valid easy equation (subtraction)", async () => {
-		// randomInt(1,20) → 12, randomInt(1,20) → 7, randomInt(0,1) → 1 ("-")
 		randomSpy
-			.mockReturnValueOnce(11 / 20) // → 12
-			.mockReturnValueOnce(6 / 20)  // → 7
-			.mockReturnValueOnce(0.99);   // → 1 → "-"
+			.mockReturnValueOnce(11 / 20)
+			.mockReturnValueOnce(6 / 20)
+			.mockReturnValueOnce(0.99);
 
 		const result = await generateEquation("easy");
 		expect(result.text).toBe("12 - 7");
@@ -65,26 +62,23 @@ describe("generateEquation", () => {
 	});
 
 	it("generates a valid medium equation", async () => {
-		// randomInt(0,2) → 2 ("*"), randomInt(0,2) → 0 ("+"),
-		// randomInt(2,12) → 3, randomInt(2,12) → 4, randomInt(2,12) → 5
 		randomSpy
-			.mockReturnValueOnce(2 / 3)   // → op1 = "*"
-			.mockReturnValueOnce(0)        // → op2 = "+"
-			.mockReturnValueOnce(1 / 11)   // → x = 3
-			.mockReturnValueOnce(2 / 11)   // → y = 4
-			.mockReturnValueOnce(3 / 11);  // → z = 5
+			.mockReturnValueOnce(2 / 3)
+			.mockReturnValueOnce(0)
+			.mockReturnValueOnce(1 / 11)
+			.mockReturnValueOnce(2 / 11)
+			.mockReturnValueOnce(3 / 11);
 
 		const result = await generateEquation("medium");
 		expect(result.text).toBe("3 * 4 + 5");
-		expect(result.answer).toBe(17); // 12 + 5
+		expect(result.answer).toBe(17);
 	});
 
 	it("generates a valid hard equation", async () => {
-		// randomInt(2,10) → 5, randomInt(2,9) → 3, randomInt(1,15) → 7
 		randomSpy
-			.mockReturnValueOnce(3 / 9)   // → base = 5
-			.mockReturnValueOnce(1 / 8)   // → mult = 3
-			.mockReturnValueOnce(6 / 15); // → add = 7
+			.mockReturnValueOnce(3 / 9)
+			.mockReturnValueOnce(1 / 8)
+			.mockReturnValueOnce(6 / 15);
 
 		const result = await generateEquation("hard");
 		expect(result.text).toBe("(5 + 7) * 3");
@@ -92,7 +86,6 @@ describe("generateEquation", () => {
 	});
 
 	it("equation answer matches local evaluation", async () => {
-		// run without mocking random — just check text evaluates to answer
 		const result = await generateEquation("easy");
 		const evaluated = new Function(`return (${result.text})`)() as number;
 		expect(result.answer).toBe(evaluated);

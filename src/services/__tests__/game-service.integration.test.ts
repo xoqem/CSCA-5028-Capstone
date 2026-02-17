@@ -70,7 +70,7 @@ describe("Game Service (integration)", () => {
 				gameCode: host.gameCode,
 				roundNumber: 1,
 				playerId: host.playerId,
-				answer: 4, // equation is "2 + 2" = 4
+				answer: 4,
 				timeTakenMs: 500,
 			});
 
@@ -99,7 +99,6 @@ describe("Game Service (integration)", () => {
 			const joiner = await joinGame(host.gameCode, "Bob");
 			await startGame(host.gameCode);
 
-			// Alice answers correctly
 			await submitAnswer({
 				gameCode: host.gameCode,
 				roundNumber: 1,
@@ -108,13 +107,11 @@ describe("Game Service (integration)", () => {
 				timeTakenMs: 300,
 			});
 
-			// Check that the round now has countdown info
 			const state = await getGameState(host.gameCode, joiner.playerId);
 			expect(state.currentRound?.countdownEndsAt).toBeTruthy();
 		});
 
 		it("rejects duplicate submission", async () => {
-			// need 2 players so the round stays open after first submission
 			const host = await createGame("Alice");
 			await joinGame(host.gameCode, "Bob");
 			await startGame(host.gameCode);
@@ -143,7 +140,6 @@ describe("Game Service (integration)", () => {
 			const joiner = await joinGame(host.gameCode, "Bob");
 			await startGame(host.gameCode);
 
-			// play all 10 rounds — Alice always correct, Bob always wrong
 			for (let round = 1; round <= 10; round++) {
 				await submitAnswer({
 					gameCode: host.gameCode,
@@ -159,14 +155,11 @@ describe("Game Service (integration)", () => {
 					answer: 999,
 				});
 
-				// after both submit, round should auto-advance
 			}
 
-			// check game is finished
 			const state = await getGameState(host.gameCode, host.playerId);
 			expect(state.status).toBe("FINISHED");
 
-			// check leaderboard
 			const leaderboard = await getLeaderboard(host.gameCode);
 			expect(leaderboard).toHaveLength(2);
 			expect(leaderboard[0].displayName).toBe("Alice");
@@ -175,7 +168,6 @@ describe("Game Service (integration)", () => {
 			expect(leaderboard[1].displayName).toBe("Bob");
 			expect(leaderboard[1].totalScore).toBe(0);
 
-			// check report
 			const report = await getGameReport(host.gameCode, host.playerId);
 			expect(report.correctCount).toBe(10);
 			expect(report.totalScore).toBe(leaderboard[0].totalScore);

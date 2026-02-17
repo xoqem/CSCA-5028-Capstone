@@ -2,6 +2,8 @@
 
 Multiplayer math game using Next.js, TypeScript, Prisma, PostgreSQL.
 
+App is currently deployed on: https://math-sprint-nine.vercel.app/
+
 ## Prerequisites
 
 - Node.js 22+
