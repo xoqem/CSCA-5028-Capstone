@@ -1,0 +1,95 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+}
+
+enum RoundStatus {
+  PENDING
+  ACTIVE
+  COUNTDOWN
+  ENDED
+}
+
+model Game {
+  id                 String     @id @default(cuid())
+  gameCode           String     @unique
+  status             GameStatus @default(WAITING)
+  currentRoundNumber Int        @default(0)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  players Player[]
+  rounds  Round[]
+  events  GameEvent[]
+}
+
+model Player {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  displayName  String
+  gameId       String
+  isHost       Boolean  @default(false)
+  joinedAt     DateTime @default(now())
+
+  game        Game         @relation(fields: [gameId], references: [id])
+  submissions Submission[]
+}
+
+model Round {
+  id              String      @id @default(cuid())
+  gameId          String
+  roundNumber     Int
+  equationText    String
+  correctAnswer   Float
+  status          RoundStatus @default(PENDING)
+  startedAt       DateTime?
+  firstCorrectAt  DateTime?
+  countdownEndsAt DateTime?
+  endedAt         DateTime?
+  createdAt       DateTime    @default(now())
+
+  game        Game         @relation(fields: [gameId], references: [id])
+  submissions Submission[]
+
+  @@unique([gameId, roundNumber])
+}
+
+model Submission {
+  id          String   @id @default(cuid())
+  roundId     String
+  playerId    String
+  answer      Float
+  isCorrect   Boolean
+  score       Int      @default(0)
+  submittedAt DateTime @default(now())
+  timeTakenMs Int?
+
+  round  Round  @relation(fields: [roundId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([roundId, playerId])
+}
+
+model GameEvent {
+  id        String   @id @default(cuid())
+  gameId    String
+  type      String
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@index([gameId, createdAt])
+}
