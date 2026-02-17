@@ -170,6 +170,9 @@ export default function GamePage({
 		(event: { type: string; data: Record<string, unknown> }) => {
 			switch (event.type) {
 				case "COUNTDOWN_STARTED": {
+					const eventRound = event.data.roundNumber as number | undefined;
+					const currentRound = gameState?.currentRoundNumber;
+					if (eventRound !== undefined && currentRound !== undefined && eventRound !== currentRound) break;
 					const endsAt = event.data.countdownEndsAt as string;
 					if (endsAt) {
 						const remaining = Math.max(
@@ -181,7 +184,11 @@ export default function GamePage({
 					break;
 				}
 				case "ROUND_ENDED":
+					setCountdown(null);
+					fetchAndSetState();
+					break;
 				case "ROUND_STARTED":
+					setCountdown(null);
 					fetchAndSetState();
 					break;
 				case "GAME_ENDED":
@@ -189,7 +196,7 @@ export default function GamePage({
 					break;
 			}
 		},
-		[fetchAndSetState],
+		[fetchAndSetState, gameState?.currentRoundNumber],
 	);
 
 	useGameEvents(gameCode, handleEvent);
@@ -223,6 +230,7 @@ export default function GamePage({
 				score: result.score,
 			});
 			setAnswer("");
+			setCountdown(null);
 			setPhase("round-result");
 		} catch (err) {
 			setPhase("error");
